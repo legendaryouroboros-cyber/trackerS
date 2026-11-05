@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Трекер">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2556d9">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Трекер: питание и тренировки</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef1f5;--sf:#fff;--tx:#14202e;--mu:#5d6b7c;--ac:#2556d9;--on:#fff;--bd:#d5dbe3;--ok:#1f8a5b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1620;--sf:#172230;--tx:#e6edf5;--mu:#93a3b6;--ac:#6c9bff;--on:#0b1220;--bd:#2a394b;--ok:#4fc28d;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1620;--sf:#172230;--tx:#e6edf5;--mu:#93a3b6;--ac:#6c9bff;--on:#0b1220;--bd:#2a394b;--ok:#4fc28d;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 Manrope,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-variant-numeric:tabular-nums}
+main{max-width:620px;margin:0 auto;padding:16px 14px 40px}
+h1{font-size:24px;font-weight:800;margin:6px 0 14px;letter-spacing:-.02em}
+h2{font-size:15px;font-weight:800;margin:22px 0 8px}
+nav{display:flex;gap:4px;border-bottom:2px solid var(--bd);margin-bottom:16px}
+nav button{flex:1;background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-2px;padding:10px 4px;font:600 15px Manrope,system-ui,sans-serif;color:var(--mu)}
+nav button.on{color:var(--tx);border-color:var(--ac)}
+button,input,textarea,select{font:inherit;color:inherit}
+input,textarea{background:var(--sf);border:1px solid var(--bd);border-radius:6px;padding:9px 10px;width:100%;min-width:0}
+input:focus-visible,button:focus-visible,textarea:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
+.btn{background:var(--ac);color:var(--on);border:0;border-radius:6px;padding:10px 16px;font-weight:700}
+.ghost{background:none;color:var(--ac);border:1px solid var(--bd)}
+.row{display:flex;gap:8px;margin:8px 0}
+.row>*{flex:1}.row>.btn{flex:0 0 auto}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:var(--sf);border:1px solid var(--bd);border-radius:99px;padding:6px 12px;font-size:14px}
+.sum{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:6px 0 4px}
+.m b{font-size:20px;font-weight:800}.m small{display:block;color:var(--mu);font-size:12px}
+.m i{display:block;height:4px;background:var(--bd);border-radius:2px;margin-top:5px;position:relative;overflow:hidden}
+.m i:after{content:"";position:absolute;inset:0 auto 0 0;width:var(--w);background:var(--ok)}
+.it{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bd)}
+.it>div{flex:1;min-width:0}.it small{color:var(--mu)}
+.x{background:none;border:0;color:var(--mu);font-size:18px;padding:4px 8px}
+.pill{display:inline-block;background:var(--ac);color:var(--on);border:0;border-radius:99px;min-width:30px;padding:2px 10px;margin:4px 4px 0 0;font-weight:700}
+.ex input{width:84px;flex:0 0 84px}
+.seg{display:flex;gap:6px}.seg button{flex:1}
+.mu{color:var(--mu);font-size:14px}
+textarea{min-height:120px;font:13px/1.4 ui-monospace,Menlo,Consolas,monospace}
+details{margin-top:14px}summary{font-weight:700}
+</style>
+</head>
+<body>
+<main>
+<h1>Трекер: питание и тренировки</h1>
+<nav id="nav"></nav>
+<section id="v"></section>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const today=()=>new Date().toLocaleDateString('sv');
+const nowT=()=>new Date().toTimeString().slice(0,5);
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const num=v=>{if(v===''||v==null)return null;const n=+String(v).replace(',','.');return isNaN(n)?null:n};
+let S={targets:{},food:[],sets:[],body:[],presets:[]};
+try{const r=localStorage.getItem('trk1');if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
+const save=()=>{try{localStorage.setItem('trk1',JSON.stringify(S))}catch(e){}};
+const W={A:['Приседания','Отжимания','Австралийские подтягивания','Ягодичный мостик','Планка (сек)'],
+B:['Выпады (на ногу)','Негативные подтягивания','Отжимания','Вис на турнике (сек)','Сгибания ног скользящими пятками']};
+let tab='food',day=today(),wk=null,resetArm=false,msg='';
+const TABS={food:'Питание',work:'Тренировки',body:'Вес и сон',data:'Данные'};
+
+function food(){
+  const rows=S.food.filter(x=>x.date==day).sort((a,b)=>a.time<b.time?-1:1);
+  const t={kcal:0,p:0,f:0,c:0};rows.forEach(x=>{for(const k in t)t[k]+=x[k]||0});
+  const T=S.targets;
+  const m=(l,k,u)=>`<div class="m"><b>${Math.round(t[k])}</b> ${u}<small>${l}${T[k]?' из '+T[k]:''}</small>${T[k]?`<i style="--w:${Math.min(100,t[k]/T[k]*100)}%"></i>`:''}</div>`;
+  return `<input type="date" id="day" value="${day}" aria-label="Дата">
+  <div class="sum">${m('калории','kcal','ккал')}${m('белок','p','г')}${m('жиры','f','г')}${m('углеводы','c','г')}</div>
+  ${S.presets.length?`<h2>Мои блюда — нажми, чтобы добавить</h2><div class="chips">${S.presets.map(p=>`<button class="chip" data-a="preset" data-id="${p.id}">${esc(p.name)} · ${p.kcal||0}</button>`).join('')}</div>`:''}
+  <h2>Добавить приём пищи</h2>
+  <div class="row"><input id="fn" placeholder="Что съел"><input id="ft" type="time" value="${nowT()}" style="flex:0 0 110px"></div>
+  <div class="row"><input id="fk" inputmode="decimal" placeholder="ккал"><input id="fp" inputmode="decimal" placeholder="белок"><input id="ff" inputmode="decimal" placeholder="жиры"><input id="fc" inputmode="decimal" placeholder="углев."></div>
+  <div class="row"><button class="btn" data-a="addfood">Добавить</button></div>
+  <h2>Записи за день</h2>
+  ${rows.length?rows.map(x=>`<div class="it"><div>${esc(x.name)}<br><small>${x.time} · ${x.kcal||0} ккал · Б ${x.p||0} Ж ${x.f||0} У ${x.c||0}</small></div><button class="x" data-a="delfood" data-id="${x.id}" aria-label="Удалить">✕</button></div>`).join(''):'<p class="mu">Пока пусто. Добавь первый приём пищи.</p>'}
+  <details><summary>Дневные цели</summary><p class="mu">Задай цели после консультации с врачом или диетологом — приложение их не рассчитывает.</p>
+  <div class="row"><input id="tk" inputmode="decimal" placeholder="ккал" value="${T.kcal??''}"><input id="tp" inputmode="decimal" placeholder="белок" value="${T.p??''}"><input id="tf" inputmode="decimal" placeholder="жиры" value="${T.f??''}"><input id="tc" inputmode="decimal" placeholder="углев." value="${T.c??''}"></div>
+  <button class="btn" data-a="targets">Сохранить цели</button></details>`;
+}
+
+function lastFor(ex){
+  const d=S.sets.filter(s=>s.ex==ex&&s.date<today()).map(s=>s.date).sort().pop();
+  return d?S.sets.filter(s=>s.ex==ex&&s.date==d).map(s=>s.reps).join(', '):'';
+}
+function work(){
+  if(!wk){const l=S.sets.filter(s=>s.note=='A'||s.note=='B').sort((a,b)=>a.date<b.date?-1:1).pop();wk=l&&l.note=='A'?'B':'A'}
+  const td=S.sets.filter(s=>s.date==today());
+  return `<p class="mu">Тренировки A и B чередуются. Начни с одного рабочего подхода на упражнение и каждый раз старайся сделать на 1 повтор больше, чем в прошлый раз. До отказа не доходи.</p>
+  <div class="seg"><button class="btn ${wk=='A'?'':'ghost'}" data-a="wk" data-id="A">Тренировка A</button><button class="btn ${wk=='B'?'':'ghost'}" data-a="wk" data-id="B">Тренировка B</button></div>
+  ${W[wk].map((ex,i)=>{const p=lastFor(ex);const mine=td.filter(s=>s.ex==ex);
+  return `<div class="it ex"><div>${esc(ex)}<br><small>${p?'в прошлый раз: '+p:'ещё не делал'}</small><br>${mine.map(s=>`<button class="pill" data-a="delset" data-id="${s.id}" title="Удалить подход">${s.reps}</button>`).join('')}</div><input id="r${i}" inputmode="numeric" placeholder="повторы" aria-label="Повторы"><button class="btn" data-a="addset" data-i="${i}">+</button></div>`}).join('')}
+  <p class="mu">Нажми на отметку подхода, чтобы удалить её.</p>`;
+}
+
+function body(){
+  const rows=[...S.body].sort((a,b)=>a.date<b.date?1:-1);
+  const w=[...S.body].filter(x=>x.kg).sort((a,b)=>a.date<b.date?-1:1).slice(-20);
+  let sp='';
+  if(w.length>1){const mn=Math.min(...w.map(x=>x.kg)),mx=Math.max(...w.map(x=>x.kg)),r=mx-mn||1;
+    sp=`<svg viewBox="0 0 300 60" width="100%" height="60" role="img" aria-label="График веса"><polyline fill="none" stroke="var(--ac)" stroke-width="2.5" stroke-linejoin="round" points="${w.map((x,i)=>`${i*300/(w.length-1)},${54-(x.kg-mn)/r*48}`).join(' ')}"/></svg>`}
+  return `<div class="row"><input type="date" id="bd" value="${today()}"></div>
+  <div class="row"><input id="bk" inputmode="decimal" placeholder="Вес, кг (раз в неделю, утром)"><input id="bs" inputmode="decimal" placeholder="Сон, часов"></div>
+  <div class="row"><button class="btn" data-a="addbody">Сохранить</button></div>${sp}
+  <h2>История</h2>${rows.length?rows.slice(0,20).map(x=>{const pv=rows.find(y=>y.kg&&y.date<x.date&&x.kg);const d=x.kg&&pv?x.kg-pv.kg:null;
+  return `<div class="it"><div><b>${x.kg?x.kg+' кг':'—'}</b>${d!=null?` <small>${d>0?'+':''}${d.toFixed(1)}</small>`:''}<br><small>${x.date}${x.sleep?' · сон '+x.sleep+' ч':''}</small></div><button class="x" data-a="delbody" data-id="${x.id}" aria-label="Удалить">✕</button></div>`}).join(''):'<p class="mu">Записей нет.</p>'}`;
+}
+
+const HEAD=['type','date','time','name','kcal','protein','fat','carbs','reps','weight_kg','sleep_h','note'];
+function toRows(){
+  const R=[];const n=v=>v==null?'':v;
+  if(Object.keys(S.targets).length)R.push(['target','','','',n(S.targets.kcal),n(S.targets.p),n(S.targets.f),n(S.targets.c),'','','','']);
+  S.presets.forEach(p=>R.push(['preset','','',p.name,n(p.kcal),n(p.p),n(p.f),n(p.c),'','','','']));
+  S.food.forEach(x=>R.push(['food',x.date,x.time,x.name,n(x.kcal),n(x.p),n(x.f),n(x.c),'','','','']));
+  S.sets.forEach(s=>R.push(['set',s.date,'',s.ex,'','','','',s.reps,'','',s.note||'']));
+  S.body.forEach(b=>R.push(['body',b.date,'','','','','','','',n(b.kg),n(b.sleep),'']));
+  return R;
+}
+const q=v=>/[",\n;]/.test(String(v))?'"'+String(v).replace(/"/g,'""')+'"':String(v);
+const toCSV=()=>[HEAD,...toRows()].map(r=>r.map(q).join(',')).join('\n');
+function parse(t){
+  t=t.replace(/^\uFEFF/,'').trim();const d=t.split('\n')[0].includes(',')?',':';';
+  const out=[];let r=[],c='',inq=false;
+  for(let i=0;i<t.length;i++){const ch=t[i];
+    if(inq){if(ch=='"'){if(t[i+1]=='"'){c+='"';i++}else inq=false}else c+=ch}
+    else if(ch=='"')inq=true;
+    else if(ch==d){r.push(c);c=''}
+    else if(ch=='\n'||ch=='\r'){if(ch=='\r'&&t[i+1]=='\n')i++;r.push(c);c='';out.push(r);r=[]}
+    else c+=ch}
+  r.push(c);out.push(r);return out;
+}
+function doImport(text){
+  try{
+    const rows=parse(text);const h=rows.shift().map(x=>x.trim().toLowerCase());
+    const seen=new Set(toRows().map(r=>r.join('\u0001')));let add=0,skip=0;
+    for(const raw of rows){
+      if(raw.length<2)continue;
+      const r=HEAD.map(k=>{const i=h.indexOf(k);return i<0?'':(raw[i]??'').trim()});
+      const key=r.join('\u0001');
+      if(seen.has(key)){skip++;continue}seen.add(key);
+      const [ty,date,time,name,kc,p,f,c,reps,kg,sl,note]=r;
+      if(ty=='food'&&name){S.food.push({id:uid(),date,time:time||'12:00',name,kcal:num(kc),p:num(p),f:num(f),c:num(c)});add++}
+      else if(ty=='preset'&&name){S.presets.push({id:uid(),name,kcal:num(kc),p:num(p),f:num(f),c:num(c)});add++}
+      else if(ty=='set'&&name&&num(reps)!=null){S.sets.push({id:uid(),date,ex:name,reps:num(reps),note});add++}
+      else if(ty=='body'&&date){const e=S.body.find(b=>b.date==date);const o={kg:num(kg),sleep:num(sl)};
+        if(e)Object.assign(e,{kg:o.kg??e.kg,sleep:o.sleep??e.sleep});else S.body.push({id:uid(),date,...o});add++}
+      else if(ty=='target'){S.targets={kcal:num(kc),p:num(p),f:num(f),c:num(c)};add++}
+      else skip++;
+    }
+    save();msg=`Добавлено строк: ${add}. Пропущено (дубли или ошибки): ${skip}.`;
+  }catch(e){msg='Не удалось разобрать CSV. Проверь, что первая строка — заголовок.'}
+  render();
+}
+function data(){
+  return `<p class="mu">Всё хранится в этом браузере. Копируй CSV в заметки как резервную копию, а присланный мной CSV вставляй ниже. Дубли пропускаются.</p>
+  <h2>Вставить CSV</h2><textarea id="imp" placeholder="type,date,time,name,kcal,protein,fat,carbs,reps,weight_kg,sleep_h,note"></textarea>
+  <div class="row"><button class="btn" data-a="imp">Импортировать</button><input type="file" id="file" accept=".csv,text/csv,text/plain"></div>
+  ${msg?`<p role="status"><b>${esc(msg)}</b></p>`:''}
+  <h2>Экспорт</h2><textarea id="exp" readonly>${esc(toCSV())}</textarea>
+  <div class="row"><button class="btn ghost" data-a="copy">Скопировать CSV</button><button class="btn ghost" data-a="reset">${resetArm?'Точно удалить всё?':'Стереть все данные'}</button></div>
+  <details><summary>Формат строк</summary><p class="mu">type: food, preset (блюдо для быстрого добавления), set (подход), body (вес и сон), target (цели). food: date, time, name, kcal, protein, fat, carbs. set: date, name, reps, note (A или B). body: date, weight_kg, sleep_h. Пустые ячейки допустимы.</p></details>`;
+}
+
+function render(){
+  $('#nav').innerHTML=Object.entries(TABS).map(([k,l])=>`<button class="${k==tab?'on':''}" data-a="tab" data-id="${k}">${l}</button>`).join('');
+  $('#v').innerHTML={food,work,body,data}[tab]();
+}
+const val=id=>$('#'+id).value;
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,id=b.dataset.id;
+  if(a=='tab'){tab=id;msg='';resetArm=false}
+  else if(a=='wk')wk=id;
+  else if(a=='addfood'){const name=val('fn').trim();if(!name){$('#fn').focus();return}
+    S.food.push({id:uid(),date:day,time:val('ft')||nowT(),name,kcal:num(val('fk')),p:num(val('fp')),f:num(val('ff')),c:num(val('fc'))})}
+  else if(a=='preset'){const p=S.presets.find(x=>x.id==id);S.food.push({id:uid(),date:day,time:nowT(),name:p.name,kcal:p.kcal,p:p.p,f:p.f,c:p.c})}
+  else if(a=='delfood')S.food=S.food.filter(x=>x.id!=id);
+  else if(a=='targets')S.targets={kcal:num(val('tk')),p:num(val('tp')),f:num(val('tf')),c:num(val('tc'))};
+  else if(a=='addset'){const i=+b.dataset.i,r=num(val('r'+i));if(r==null){$('#r'+i).focus();return}
+    S.sets.push({id:uid(),date:today(),ex:W[wk][i],reps:r,note:wk})}
+  else if(a=='delset')S.sets=S.sets.filter(x=>x.id!=id);
+  else if(a=='addbody'){const date=val('bd'),kg=num(val('bk')),sleep=num(val('bs'));if(kg==null&&sleep==null)return;
+    const e=S.body.find(x=>x.date==date);if(e){if(kg!=null)e.kg=kg;if(sleep!=null)e.sleep=sleep}else S.body.push({id:uid(),date,kg,sleep})}
+  else if(a=='delbody')S.body=S.body.filter(x=>x.id!=id);
+  else if(a=='imp'){doImport(val('imp'));return}
+  else if(a=='copy'){const t=$('#exp');t.select();let ok=false;
+    try{navigator.clipboard.writeText(t.value);ok=true}catch(x){}
+    if(!ok)try{ok=document.execCommand('copy')}catch(x){}
+    msg=ok?'CSV скопирован.':'Выдели текст в поле экспорта и скопируй вручную.';render();return}
+  else if(a=='reset'){if(!resetArm){resetArm=true;render();return}
+    S={targets:{},food:[],sets:[],body:[],presets:[]};resetArm=false;msg='Данные стёрты.'}
+  save();render();
+});
+document.addEventListener('change',e=>{
+  if(e.target.id=='day'){day=e.target.value||today();render()}
+  if(e.target.id=='file'&&e.target.files[0]){const fr=new FileReader();fr.onload=()=>doImport(String(fr.result));fr.readAsText(e.target.files[0])}
+});
+render();
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(function(){});
+</script>
+</body>
+</html>
